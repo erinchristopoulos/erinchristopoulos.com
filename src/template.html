@@ -94,6 +94,9 @@
   <form action="{{SUBSCRIBE}}" method="post" target="_blank">
     <label class="vh" for="email">Your email</label>
     <input id="email" type="email" name="email" placeholder="Your email for new essays" required>
+    <input type="hidden" name="source" value="embed">
+    <input type="hidden" name="first_url" value="https://{{DOMAIN}}/">
+    <input type="hidden" name="current_url" value="https://{{DOMAIN}}/">
     <button type="submit">Subscribe</button>
   </form>
 
