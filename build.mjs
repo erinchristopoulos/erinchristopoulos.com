@@ -1,0 +1,176 @@
+// Builds erinchristopoulos.com into ./dist.
+// No dependencies: needs Node 20 or newer (built-in fetch).
+//
+// Pulls, on every build:
+//   - the newest essays (and their covers) from the A Little Less RSS feed
+//   - the newest Reels and posts from Instagram, when IG_ACCESS_TOKEN is set
+// Everything else (ShopMy collections, photos) comes from ./data and ./static.
+//
+// Local test without network:  FEED_FILE=test/feed.xml COVERS_DIR=test/covers node build.mjs
+
+import { readFile, writeFile, mkdir, cp, rm, readdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
+const root = path.dirname(new URL(import.meta.url).pathname);
+const dist = path.join(root, 'dist');
+const cfg = JSON.parse(await readFile(path.join(root, 'data/config.json'), 'utf8'));
+const collections = JSON.parse(await readFile(path.join(root, 'data/collections.json'), 'utf8'));
+const igFallback = JSON.parse(await readFile(path.join(root, 'data/instagram-fallback.json'), 'utf8'));
+
+const AR = '<svg class="ar" aria-hidden="true" viewBox="0 0 16 12"><path d="M0 6h14M9 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+
+const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const decode = (s) => String(s ?? '')
+  .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+  .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n))
+  .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+  .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+  .trim();
+
+async function fetchWithRetry(url, opts = {}, tries = 3) {
+  let last;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetch(url, { ...opts, headers: { 'user-agent': 'erinchristopoulos.com site builder', ...(opts.headers || {}) } });
+      if (r.ok) return r;
+      last = new Error(`${r.status} ${r.statusText} for ${url.split('?')[0]}`);
+    } catch (e) { last = e; }
+    await new Promise((res) => setTimeout(res, 1500 * (i + 1)));
+  }
+  throw last;
+}
+
+// Saves a remote image into dist/img and returns its path on the site.
+// If the download fails, the page links the remote image directly so nothing breaks.
+async function saveImage(url, name) {
+  try {
+    const r = await fetchWithRetry(url);
+    const type = r.headers.get('content-type') || '';
+    const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
+    const file = `img/${name}.${ext}`;
+    await writeFile(path.join(dist, file), Buffer.from(await r.arrayBuffer()));
+    return file;
+  } catch (e) {
+    console.warn(`  could not save ${name}: ${e.message}`);
+    return url;
+  }
+}
+
+// ---------- essays (RSS) ----------
+async function getEssays() {
+  const xml = process.env.FEED_FILE
+    ? await readFile(path.join(root, process.env.FEED_FILE), 'utf8')
+    : await (await fetchWithRetry(cfg.substackFeed)).text();
+  const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m) => {
+    const it = m[1];
+    const tag = (t) => decode((it.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`)) || [])[1]);
+    const enclosure = (it.match(/<enclosure[^>]*url="([^"]+)"/) || [])[1];
+    return { title: tag('title'), link: tag('link'), date: new Date(tag('pubDate')), cover: enclosure ? decode(enclosure) : null };
+  }).filter((e) => e.title && e.link);
+  const essays = items.slice(0, cfg.essays);
+  for (const [i, e] of essays.entries()) {
+    if (!e.cover) continue;
+    const id = path.basename(e.cover).slice(0, 8);
+    if (process.env.COVERS_DIR && existsSync(path.join(root, process.env.COVERS_DIR, `${id}.jpg`))) {
+      await cp(path.join(root, process.env.COVERS_DIR, `${id}.jpg`), path.join(dist, `img/essay-${i + 1}.jpg`));
+      e.image = `img/essay-${i + 1}.jpg`;
+    } else {
+      const sized = `https://substackcdn.com/image/fetch/w_960,c_limit,f_jpg,q_auto:good,fl_progressive:steep/${encodeURIComponent(e.cover)}`;
+      e.image = await saveImage(sized, `essay-${i + 1}`);
+    }
+  }
+  return essays;
+}
+
+// ---------- Instagram ----------
+async function getInstagram() {
+  const token = process.env.IG_ACCESS_TOKEN;
+  if (!token) {
+    console.log('  no IG_ACCESS_TOKEN: using the saved Reels and posts');
+    return igFallback;
+  }
+  try {
+    const fields = 'id,media_type,permalink,thumbnail_url,media_url,timestamp';
+    const r = await fetchWithRetry(`https://graph.instagram.com/me/media?fields=${fields}&limit=40&access_token=${encodeURIComponent(token)}`);
+    const { data = [] } = await r.json();
+    const reelsSrc = data.filter((m) => m.media_type === 'VIDEO' && m.thumbnail_url).slice(0, cfg.reels);
+    const gridSrc = data.filter((m) => m.media_type !== 'VIDEO' && m.media_url).slice(0, cfg.grid);
+    const fmt = (t) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const reels = [];
+    for (const [i, m] of reelsSrc.entries()) {
+      reels.push({ image: await saveImage(m.thumbnail_url, `reel-${i + 1}`), url: m.permalink, alt: `Reel from ${fmt(m.timestamp)}` });
+    }
+    const grid = [];
+    for (const [i, m] of gridSrc.entries()) {
+      grid.push({ image: await saveImage(m.media_url, `post-${i + 1}`), url: m.permalink, alt: `Instagram post from ${fmt(m.timestamp)}` });
+    }
+    if (!reels.length && !grid.length) throw new Error('Instagram returned no media');
+    return { reels: reels.length ? reels : igFallback.reels, grid: grid.length ? grid : igFallback.grid };
+  } catch (e) {
+    console.warn(`  Instagram failed (${e.message}): using the saved Reels and posts`);
+    return igFallback;
+  }
+}
+
+// ---------- ShopMy ----------
+async function getCollections() {
+  const out = [];
+  for (const [ci, c] of collections.entries()) {
+    const images = [];
+    for (const [ii, url] of c.images.entries()) {
+      const local = process.env.SHOP_DIR && path.join(root, process.env.SHOP_DIR, `shop-${ci + 1}-${ii + 1}.jpg`);
+      if (local && existsSync(local)) {
+        await cp(local, path.join(dist, `img/shop-${ci + 1}-${ii + 1}.jpg`));
+        images.push(`img/shop-${ci + 1}-${ii + 1}.jpg`);
+      } else {
+        images.push(await saveImage(url, `shop-${ci + 1}-${ii + 1}`));
+      }
+    }
+    out.push({ ...c, images });
+  }
+  return out;
+}
+
+// ---------- render ----------
+await rm(dist, { recursive: true, force: true });
+await mkdir(path.join(dist, 'img'), { recursive: true });
+await cp(path.join(root, 'static'), dist, { recursive: true });
+
+console.log('essays…');
+const essays = await getEssays();
+console.log('instagram…');
+const ig = await getInstagram();
+console.log('shop…');
+const shop = await getCollections();
+
+const essaysHtml = essays.map((e) => `    <a class="essay" href="${esc(e.link)}"><img src="${esc(e.image || '')}" alt="${esc(e.title)}" loading="lazy" width="960" height="691"></a>`).join('\n');
+const reelsHtml = ig.reels.map((r) => `    <a class="reel" href="${esc(r.url)}"><img src="${esc(r.image)}" alt="${esc(r.alt || 'Reel')}" loading="lazy"></a>`).join('\n');
+const gridHtml = ig.grid.map((g) => `    <a href="${esc(g.url)}"><img src="${esc(g.image)}" alt="${esc(g.alt || 'Instagram post')}" loading="lazy"></a>`).join('\n');
+const shopHtml = shop.map((c) => `    <a class="coll" href="${esc(c.url)}">
+      <div class="grid">${c.images.map((src) => `<img src="${esc(src)}" alt="" loading="lazy">`).join('')}</div>
+      <div class="rule"></div>
+      <div class="nm">${esc(c.name)}</div>
+      <div class="lab">${esc(c.count)}</div>
+    </a>`).join('\n');
+
+const tpl = await readFile(path.join(root, 'src/template.html'), 'utf8');
+const html = tpl
+  .replaceAll('{{ESSAYS}}', essaysHtml)
+  .replaceAll('{{REELS}}', reelsHtml)
+  .replaceAll('{{COLLECTIONS}}', shopHtml)
+  .replaceAll('{{GRID}}', gridHtml)
+  .replaceAll('{{AR}}', AR)
+  .replaceAll('{{DOMAIN}}', cfg.domain)
+  .replaceAll('{{ARCHIVE}}', esc(cfg.substackArchive))
+  .replaceAll('{{SUBSCRIBE}}', esc(cfg.substackSubscribe))
+  .replaceAll('{{INSTAGRAM}}', esc(cfg.instagramProfile))
+  .replaceAll('{{SHOP}}', esc(cfg.shopmyShop))
+  .replaceAll('{{EMAIL}}', esc(cfg.email))
+  .replaceAll('{{YEAR}}', String(new Date().getFullYear()))
+  .replaceAll('{{BUILT}}', new Date().toISOString());
+
+await writeFile(path.join(dist, 'index.html'), html);
+await writeFile(path.join(dist, 'CNAME'), cfg.domain + '\n');
+await writeFile(path.join(dist, '.nojekyll'), '');
+console.log(`done: ${essays.length} essays, ${ig.reels.length} reels, ${ig.grid.length} posts, ${shop.length} collections`);

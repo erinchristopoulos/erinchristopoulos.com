@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Erin Christopoulos</title>
+<meta name="description" content="Digital diary of a homebody. Essays at A Little Less, Reels, and the things I use and love.">
+<meta property="og:title" content="Erin Christopoulos">
+<meta property="og:description" content="Digital diary of a homebody. Essays at A Little Less, Reels, and the things I use and love.">
+<meta property="og:image" content="https://{{DOMAIN}}/img/portrait.jpg">
+<meta property="og:url" content="https://{{DOMAIN}}/">
+<link rel="canonical" href="https://{{DOMAIN}}/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23eb512c'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/archivo-wdth.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face{font-family:"Archivo";src:url("fonts/archivo-wdth.woff2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
+  :root{--slate:#768b9d;--white:#eceae5;--butter:#e5c66e;--verm:#eb512c;--ink:#1c1b1a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--white)}
+  body{color:var(--ink);font-family:"Archivo",Arial,sans-serif;font-weight:500;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;font-variant-numeric:lining-nums tabular-nums}
+  a{color:inherit;text-decoration:none}
+  img{display:block;max-width:100%;height:auto}
+  .col{max-width:440px;margin:0 auto;container-type:inline-size;overflow:hidden}
+  .lab{font-stretch:125%;font-weight:500;letter-spacing:.05em;line-height:1.1;text-transform:uppercase}
+  .rule{height:3px;background:var(--ink)}
+  .ar{width:1.15em;height:.86em;margin-left:.3em;vertical-align:-.04em}
+
+  .hero img{width:100%;aspect-ratio:3/4;object-fit:cover}
+  .intro{background:var(--verm);padding:22px 7cqw 24px}
+  .intro .top{display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:16px}
+  .intro h1{font-stretch:125%;font-weight:800;font-size:11.1cqw;line-height:.8;white-space:nowrap;letter-spacing:0}
+  .intro .rule{margin:13px 0 11px}
+  .intro .rows{display:flex;flex-direction:column;gap:9px;font-size:13px}
+  .intro .rows div{display:flex;justify-content:space-between}
+
+  .sh{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;margin:38px 0 12px;padding:0 7cqw}
+  .rail{display:flex;gap:10px;overflow-x:auto;padding:0 7cqw;scroll-snap-type:x mandatory;scroll-padding-left:7cqw;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .rail::-webkit-scrollbar{display:none}
+  .rail>*{flex:none;scroll-snap-align:start}
+  .rail::after{content:"";flex:0 0 calc(7cqw - 10px)}
+
+  .essay{width:min(78cqw,330px)}
+  .essay img{width:100%;aspect-ratio:1456/1048;object-fit:cover;background:var(--slate)}
+  .more{width:140px;border:3px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:10.5px}
+
+  form{display:flex;margin:14px 7cqw 0}
+  .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  input[type=email]{flex:1;min-width:0;border:0;border-radius:0;background:#fff;color:var(--ink);font:500 15px "Archivo",Arial,sans-serif;padding:14px 13px;-webkit-appearance:none}
+  input[type=email]::placeholder{color:#6b6862}
+  button{border:0;border-radius:0;background:var(--ink);color:var(--white);cursor:pointer;font-family:"Archivo",Arial,sans-serif;font-stretch:125%;font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:12px;padding:0 18px;min-height:44px;-webkit-appearance:none}
+
+  .reel{width:min(40cqw,170px)}
+  .reel img{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--slate)}
+
+  .coll{width:min(54cqw,220px)}
+  .coll .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px}
+  .coll .grid img{width:100%;aspect-ratio:4/5;object-fit:contain;background:#fff}
+  .coll .rule{margin:9px 0 8px}
+  .coll .nm{font-stretch:125%;font-weight:800;font-size:14px;line-height:1.1;text-transform:uppercase}
+  .coll .lab{font-size:10.5px;margin-top:5px}
+
+  .ig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}
+  .ig img{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--slate)}
+
+  .btn{display:block;text-align:center;padding:16px 12px;margin:0 7cqw;background:var(--ink);color:var(--white);font-stretch:125%;font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:12px}
+  footer{padding:40px 7cqw 30px}
+  footer .rule{margin-bottom:9px}
+  footer .lab{display:flex;justify-content:space-between;font-size:10.5px}
+  a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+</style>
+</head>
+<body>
+<main class="col">
+
+  <a class="hero" href="{{INSTAGRAM}}"><img src="img/portrait.jpg" alt="Erin Christopoulos" width="1000" height="1333"></a>
+
+  <section class="intro" aria-label="About">
+    <div class="top lab"><span>Erin Christopoulos</span><span>Boulder, CO</span></div>
+    <h1>HOMEBODY</h1>
+    <div class="rule"></div>
+    <div class="rows lab">
+      <div><span>Digital</span><span>Diary</span></div>
+      <div><span>Cooking</span><span>Baking</span></div>
+      <div><span>Outfits</span><span>On repeat</span></div>
+      <div><span>Life with</span><span>2 tweens</span></div>
+    </div>
+  </section>
+
+  <div class="sh lab"><span>A Little Less &middot; essays</span><a href="{{ARCHIVE}}">All{{AR}}</a></div>
+  <div class="rail">
+{{ESSAYS}}
+    <a class="more lab" href="{{ARCHIVE}}"><span>All essays{{AR}}</span></a>
+  </div>
+  <form action="{{SUBSCRIBE}}" method="post" target="_blank">
+    <label class="vh" for="email">Your email</label>
+    <input id="email" type="email" name="email" placeholder="Your email for new essays" required>
+    <button type="submit">Subscribe</button>
+  </form>
+
+  <div class="sh lab"><span>Reels</span><a href="{{INSTAGRAM}}reels/">Watch all{{AR}}</a></div>
+  <div class="rail">
+{{REELS}}
+  </div>
+
+  <div class="sh lab"><span>Shop my favorites</span><a href="{{SHOP}}">Shop all{{AR}}</a></div>
+  <div class="rail">
+{{COLLECTIONS}}
+  </div>
+
+  <div class="sh lab"><span>@erin_christopoulos</span><a href="{{INSTAGRAM}}">Follow{{AR}}</a></div>
+  <div class="ig">
+{{GRID}}
+  </div>
+
+  <div class="sh lab"><span>Work with me</span><span>Brands + partnerships</span></div>
+  <a class="btn" href="mailto:{{EMAIL}}">{{EMAIL}}</a>
+
+  <footer>
+    <div class="rule"></div>
+    <div class="lab"><span>A Little Less</span><span>&copy; {{YEAR}} Erin Christopoulos</span></div>
+  </footer>
+</main>
+<!-- built {{BUILT}} -->
+</body>
+</html>

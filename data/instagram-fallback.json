@@ -1,0 +1,17 @@
+{
+  "_note": "Used only when the Instagram connection is not set up yet or fails. Once IG_ACCESS_TOKEN is added, the build pulls the newest Reels and posts instead.",
+  "reels": [
+    { "image": "fallback/cover_tray.jpg", "url": "https://www.instagram.com/erin_christopoulos/reel/DfXYovUs0f5/", "alt": "Reel: the kids' charging station" },
+    { "image": "fallback/cover_giraffe.jpg", "url": "https://www.instagram.com/erin_christopoulos/reel/De-Kc7Is-0c/", "alt": "Reel: a Palm Springs weekend" },
+    { "image": "fallback/cover_plate.jpg", "url": "https://www.instagram.com/erin_christopoulos/reel/DeSFWxrJjLb/", "alt": "Reel: Homebody Fridays No. 02" },
+    { "image": "fallback/cover_quote.jpg", "url": "https://www.instagram.com/erin_christopoulos/reel/Ddjwr59JSCo/", "alt": "Reel: on trusting myself" }
+  ],
+  "grid": [
+    { "image": "fallback/ferris.jpg", "url": "https://www.instagram.com/erin_christopoulos/p/DbEsYauJMay/" },
+    { "image": "fallback/puppy.jpg", "url": "https://www.instagram.com/erin_christopoulos/p/DExuwLyyOd_/" },
+    { "image": "fallback/elephant.jpg", "url": "https://www.instagram.com/erin_christopoulos/p/DIKiwKgMRHq/" },
+    { "image": "fallback/books.jpg", "url": "https://www.instagram.com/erin_christopoulos/p/CgC4LkMPT9N/" },
+    { "image": "fallback/r_horse.jpg", "url": "https://www.instagram.com/erin_christopoulos/reel/Ddjwr59JSCo/" },
+    { "image": "fallback/forest.jpg", "url": "https://www.instagram.com/erin_christopoulos/p/Ct2tbysMYv5/" }
+  ]
+}
