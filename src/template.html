@@ -50,7 +50,7 @@
   button{border:0;border-radius:0;background:var(--ink);color:var(--white);cursor:pointer;font-family:"Archivo",Arial,sans-serif;font-stretch:125%;font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:12px;padding:0 18px;min-height:44px;-webkit-appearance:none}
 
   .reel{width:min(40cqw,170px)}
-  .reel img{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--slate)}
+  .reel img,.reel video{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--slate)}
 
   .coll{width:min(54cqw,220px)}
   .coll .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px}
@@ -87,7 +87,7 @@
   </section>
 
   <div class="sh lab"><span>A Little Less &middot; essays</span><a href="{{ARCHIVE}}">All{{AR}}</a></div>
-  <div class="rail">
+  <div class="rail" data-autoscroll>
 {{ESSAYS}}
     <a class="more lab" href="{{ARCHIVE}}"><span>All essays{{AR}}</span></a>
   </div>
@@ -121,5 +121,41 @@
   </footer>
 </main>
 <!-- built {{BUILT}} -->
+<script>
+// Essays: one slow pass through the covers so readers can see the row swipes.
+// It stops for good at the end, or the moment a reader touches the row.
+(function () {
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var rail = document.querySelector('[data-autoscroll]');
+  if (rail && !still && 'IntersectionObserver' in window) {
+    var cards = rail.querySelectorAll('.essay, .more'), i = 0, timer = null, done = false;
+    var stop = function () { done = true; clearInterval(timer); timer = null; };
+    ['pointerdown', 'touchstart', 'wheel', 'keydown', 'focusin'].forEach(function (e) {
+      rail.addEventListener(e, stop, { passive: true, once: true });
+    });
+    var step = function () {
+      i += 1;
+      if (i >= cards.length) { rail.scrollTo({ left: 0, behavior: 'smooth' }); stop(); return; }
+      rail.scrollTo({ left: cards[i].offsetLeft - cards[0].offsetLeft, behavior: 'smooth' });
+    };
+    new IntersectionObserver(function (en) {
+      if (done) return;
+      if (en[0].isIntersecting && !timer) timer = setInterval(step, 2600);
+      else if (!en[0].isIntersecting && timer) { clearInterval(timer); timer = null; }
+    }, { threshold: 0.6 }).observe(rail);
+  }
+  // Reels: play the previews that are on screen, muted, and pause the rest.
+  var vids = document.querySelectorAll('.reel video');
+  if (vids.length && !still && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (ens) {
+      ens.forEach(function (en) {
+        if (en.isIntersecting) { var p = en.target.play(); if (p && p.catch) p.catch(function () {}); }
+        else en.target.pause();
+      });
+    }, { threshold: 0.5 });
+    vids.forEach(function (v) { io.observe(v); });
+  }
+})();
+</script>
 </body>
 </html>

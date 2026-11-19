@@ -11,6 +11,10 @@
 import { readFile, writeFile, mkdir, cp, rm, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import os from 'node:os';
+const run = promisify(execFile);
 
 const root = path.dirname(new URL(import.meta.url).pathname);
 const dist = path.join(root, 'dist');
@@ -84,6 +88,25 @@ async function getEssays() {
 }
 
 // ---------- Instagram ----------
+// Downloads a Reel and cuts a short, silent preview: 6 seconds, 480px wide, H.264.
+// Returns the local path, or null when the video can't be fetched or ffmpeg isn't there.
+async function saveVideo(url, name) {
+  const tmp = path.join(os.tmpdir(), `${name}-src.mp4`);
+  try {
+    const r = await fetchWithRetry(url);
+    await writeFile(tmp, Buffer.from(await r.arrayBuffer()));
+    await run('ffmpeg', ['-y', '-loglevel', 'error', '-t', '6', '-i', tmp, '-an',
+      '-vf', 'scale=480:-2', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28',
+      '-pix_fmt', 'yuv420p', '-movflags', '+faststart', path.join(dist, `img/${name}.mp4`)]);
+    return `img/${name}.mp4`;
+  } catch (e) {
+    console.warn(`  no preview for ${name} (${e.message.split('\n')[0]})`);
+    return null;
+  } finally {
+    await rm(tmp, { force: true });
+  }
+}
+
 async function getInstagram() {
   const token = process.env.IG_ACCESS_TOKEN;
   if (!token) {
@@ -92,14 +115,21 @@ async function getInstagram() {
   }
   try {
     const fields = 'id,media_type,permalink,thumbnail_url,media_url,timestamp';
-    const r = await fetchWithRetry(`https://graph.instagram.com/me/media?fields=${fields}&limit=40&access_token=${encodeURIComponent(token)}`);
+    const api = process.env.IG_API_BASE || 'https://graph.instagram.com';
+    const r = await fetchWithRetry(`${api}/me/media?fields=${fields}&limit=40&access_token=${encodeURIComponent(token)}`);
     const { data = [] } = await r.json();
     const reelsSrc = data.filter((m) => m.media_type === 'VIDEO' && m.thumbnail_url).slice(0, cfg.reels);
     const gridSrc = data.filter((m) => m.media_type !== 'VIDEO' && m.media_url).slice(0, cfg.grid);
     const fmt = (t) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const reels = [];
     for (const [i, m] of reelsSrc.entries()) {
-      reels.push({ image: await saveImage(m.thumbnail_url, `reel-${i + 1}`), url: m.permalink, alt: `Reel from ${fmt(m.timestamp)}` });
+      reels.push({
+        image: await saveImage(m.thumbnail_url, `reel-${i + 1}`),
+        // media_url is missing for Reels with licensed audio; those keep the cover only.
+        video: m.media_url ? await saveVideo(m.media_url, `reel-${i + 1}`) : null,
+        url: m.permalink,
+        alt: `Reel from ${fmt(m.timestamp)}`,
+      });
     }
     const grid = [];
     for (const [i, m] of gridSrc.entries()) {
@@ -145,7 +175,9 @@ console.log('shop…');
 const shop = await getCollections();
 
 const essaysHtml = essays.map((e) => `    <a class="essay" href="${esc(e.link)}"><img src="${esc(e.image || '')}" alt="${esc(e.title)}" loading="lazy" width="960" height="691"></a>`).join('\n');
-const reelsHtml = ig.reels.map((r) => `    <a class="reel" href="${esc(r.url)}"><img src="${esc(r.image)}" alt="${esc(r.alt || 'Reel')}" loading="lazy"></a>`).join('\n');
+const reelsHtml = ig.reels.map((r) => r.video
+  ? `    <a class="reel" href="${esc(r.url)}"><video muted playsinline loop preload="none" poster="${esc(r.image)}" src="${esc(r.video)}" aria-label="${esc(r.alt || 'Reel')}"></video></a>`
+  : `    <a class="reel" href="${esc(r.url)}"><img src="${esc(r.image)}" alt="${esc(r.alt || 'Reel')}" loading="lazy"></a>`).join('\n');
 const gridHtml = ig.grid.map((g) => `    <a href="${esc(g.url)}"><img src="${esc(g.image)}" alt="${esc(g.alt || 'Instagram post')}" loading="lazy"></a>`).join('\n');
 const shopHtml = shop.map((c) => `    <a class="coll" href="${esc(c.url)}">
       <div class="grid">${c.images.map((src) => `<img src="${esc(src)}" alt="" loading="lazy">`).join('')}</div>
