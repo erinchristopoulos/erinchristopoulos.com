@@ -107,27 +107,42 @@ async function saveVideo(url, name) {
   }
 }
 
-// Newer Meta apps get a system-user token through "Unified login": it never expires,
-// lives on graph.facebook.com, and needs the Instagram account ID first.
-// Older tokens from "Instagram login" use graph.instagram.com/me/media instead.
+// Instagram is read through graph.facebook.com with a token that never expires
+// (a Unified-login token, or a system-user token from the business portfolio).
 async function fetchMedia(token) {
   const fields = 'id,media_type,permalink,thumbnail_url,media_url,timestamp,children{media_type,media_url,thumbnail_url}';
   const t = encodeURIComponent(token);
   const fb = process.env.IG_API_BASE || 'https://graph.facebook.com/v26.0';
+  // Unified-login tokens can list the account; Page and system-user tokens use the saved ID.
+  let id = cfg.igUserId;
   try {
-    const a = await fetchWithRetry(`${fb}/me/assigned_instagram_accounts?fields=id,username&access_token=${t}`, {}, 2);
+    const a = await fetch(`${fb}/me/assigned_instagram_accounts?fields=id,username&access_token=${t}`);
     const { data: accounts = [] } = await a.json();
-    const acct = accounts.find((x) => x.username === 'erin_christopoulos') || accounts[0];
-    if (acct) {
-      const r = await fetchWithRetry(`${fb}/${acct.id}/media?fields=${encodeURIComponent(fields)}&limit=40&access_token=${t}`);
-      return (await r.json()).data || [];
-    }
+    id = (accounts.find((x) => x.username === cfg.igUsername) || accounts[0] || {}).id || id;
+  } catch { /* keep the saved ID */ }
+  const r = await fetchWithRetry(`${fb}/${id}/media?fields=${encodeURIComponent(fields)}&limit=40&access_token=${t}`);
+  const all = (await r.json()).data || [];
+  return onlyWhatsOnTheGrid(fb, id, t, all);
+}
+
+// /media also returns trial Reels, which never appear on the profile. Business Discovery returns
+// what the public profile shows, so anything missing from it stays off the site. It needs a token
+// with pages_read_engagement and instagram_manage_insights; without one, nothing is filtered.
+async function onlyWhatsOnTheGrid(fb, id, t, all) {
+  try {
+    const q = `business_discovery.username(${cfg.igUsername}){media.limit(60){id}}`;
+    const r = await fetch(`${fb}/${id}?fields=${encodeURIComponent(q)}&access_token=${t}`);
+    const body = await r.json();
+    if (!r.ok) throw new Error(body?.error?.message || `HTTP ${r.status}`);
+    const onGrid = new Set((body.business_discovery?.media?.data || []).map((m) => m.id));
+    if (!onGrid.size) throw new Error('the profile returned no posts');
+    const shown = all.filter((m) => onGrid.has(m.id));
+    console.log(`  ${shown.length} of ${all.length} posts are on the grid; left off ${all.length - shown.length} trial Reels or hidden posts`);
+    return shown;
   } catch (e) {
-    console.log(`  unified login lookup failed (${e.message}); trying Instagram login`);
+    console.log(`  grid check unavailable (${e.message}); showing every post, trial Reels included`);
+    return all;
   }
-  const ig = process.env.IG_API_BASE || 'https://graph.instagram.com';
-  const r = await fetchWithRetry(`${ig}/me/media?fields=${encodeURIComponent(fields)}&limit=40&access_token=${t}`);
-  return (await r.json()).data || [];
 }
 
 async function getInstagram() {

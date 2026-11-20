@@ -1,12 +1,1 @@
-{
-  "domain": "www.erinchristopoulos.com",
-  "substackFeed": "https://read.erinchristopoulos.com/feed",
-  "substackArchive": "https://read.erinchristopoulos.com/archive",
-  "substackSubscribe": "https://read.erinchristopoulos.com/api/v1/free?nojs=true",
-  "instagramProfile": "https://www.instagram.com/erin_christopoulos/",
-  "shopmyShop": "https://shopmy.us/shop?Curator_id=65748&tab=collections&Section_id=192724",
-  "email": "hi@erinchristopoulos.com",
-  "essays": 4,
-  "reels": 6,
-  "grid": 6
-}
+{"domain": "www.erinchristopoulos.com", "substackFeed": "https://read.erinchristopoulos.com/feed", "substackArchive": "https://read.erinchristopoulos.com/archive", "substackSubscribe": "https://read.erinchristopoulos.com/api/v1/free?nojs=true", "instagramProfile": "https://www.instagram.com/erin_christopoulos/", "shopmyShop": "https://shopmy.us/shop?Curator_id=65748&tab=collections&Section_id=192724", "email": "hi@erinchristopoulos.com", "essays": 4, "reels": 6, "grid": 6, "igUserId": "17841409225647994", "igUsername": "erin_christopoulos"}
