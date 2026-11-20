@@ -131,6 +131,12 @@ async function fetchMedia(token) {
 // with pages_read_engagement and instagram_manage_insights; without one, nothing is filtered.
 async function onlyWhatsOnTheGrid(fb, id, t, all) {
   try {
+    const me = await (await fetch(`${fb}/me?fields=name&access_token=${t}`)).json();
+    const perms = await (await fetch(`${fb}/me/permissions?access_token=${t}`)).json();
+    const granted = (perms.data || []).filter((p) => p.status === 'granted').map((p) => p.permission).join(', ');
+    console.log(`  token belongs to: ${me.name || me.error?.message}; permissions: ${granted || perms.error?.message || 'none listed'}`);
+  } catch { /* diagnostics only */ }
+  try {
     const q = `business_discovery.username(${cfg.igUsername}){media.limit(60){id}}`;
     const r = await fetch(`${fb}/${id}?fields=${encodeURIComponent(q)}&access_token=${t}`);
     const body = await r.json();
