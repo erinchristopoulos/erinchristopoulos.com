@@ -30,43 +30,43 @@
   .intro .top{display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:16px}
   .intro h1{font-stretch:125%;font-weight:800;font-size:11.1cqw;line-height:.8;white-space:nowrap;letter-spacing:0}
   .intro .rule{margin:13px 0 11px}
-  .intro .rows{display:flex;flex-direction:column;gap:9px;font-size:13px}
-  .intro .rows div{display:flex;justify-content:space-between}
+  .intro .rows{display:flex;flex-direction:column;gap:11px;font-size:13px}
 
-  .sh{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;margin:38px 0 12px;padding:0 7cqw}
-  .rail{display:flex;gap:10px;overflow-x:auto;padding:0 7cqw;scroll-snap-type:x mandatory;scroll-padding-left:7cqw;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .sh{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;margin:clamp(64px,20cqw,88px) 0 18px;padding:0 7cqw}
+  .rail{display:flex;gap:14px;overflow-x:auto;padding:0 7cqw;scroll-snap-type:x mandatory;scroll-padding-left:7cqw;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .rail::-webkit-scrollbar{display:none}
-  .work{margin-bottom:14px}
+  .work{margin-bottom:24px}
+  .work .reel{width:min(58cqw,250px)}
   .rail>*{flex:none;scroll-snap-align:start}
-  .rail::after{content:"";flex:0 0 calc(7cqw - 10px)}
+  .rail::after{content:"";flex:0 0 calc(7cqw - 14px)}
 
   .essay{width:min(78cqw,330px)}
   .essay img{width:100%;aspect-ratio:1456/1048;object-fit:cover;background:var(--slate)}
   .more{width:140px;border:3px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:10.5px}
 
-  form{display:flex;margin:14px 7cqw 0}
+  form{display:flex;margin:22px 7cqw 0}
   .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   input[type=email]{flex:1;min-width:0;border:0;border-radius:0;background:#fff;color:var(--ink);font:500 15px "Archivo",Arial,sans-serif;padding:14px 13px;-webkit-appearance:none}
   input[type=email]::placeholder{color:#6b6862}
-  .thanks{margin:14px 7cqw 0;padding:14px 13px;background:#fff;font-weight:500;font-size:15px;line-height:1.35}
+  .thanks{margin:22px 7cqw 0;padding:14px 13px;background:#fff;font-weight:500;font-size:15px;line-height:1.35}
   form[hidden],.thanks[hidden],iframe[hidden]{display:none}
   button{border:0;border-radius:0;background:var(--ink);color:var(--white);cursor:pointer;font-family:"Archivo",Arial,sans-serif;font-stretch:125%;font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:12px;padding:0 18px;min-height:44px;-webkit-appearance:none}
 
   .reel{width:min(40cqw,170px)}
   .reel img,.reel video{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--slate)}
 
-  .coll{width:min(54cqw,220px)}
-  .coll .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px}
+  .coll{width:min(64cqw,260px)}
+  .coll .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
   .coll .grid img{width:100%;aspect-ratio:4/5;object-fit:contain;background:#fff}
-  .coll .rule{margin:9px 0 8px}
+  .coll .rule{margin:12px 0 9px}
   .coll .nm{font-stretch:125%;font-weight:800;font-size:14px;line-height:1.1;text-transform:uppercase}
   .coll .lab{font-size:10.5px;margin-top:5px}
 
-  .ig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}
+  .ig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 7cqw}
   .ig img{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--slate)}
 
   .btn{display:block;text-align:center;padding:16px 12px;margin:0 7cqw;background:var(--ink);color:var(--white);font-stretch:125%;font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:12px}
-  footer{padding:40px 7cqw 30px}
+  footer{padding:clamp(64px,20cqw,88px) 7cqw 36px}
   footer .rule{margin-bottom:9px}
   footer .lab{display:flex;justify-content:space-between;font-size:10.5px}
   a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
@@ -82,10 +82,10 @@
     <h1>HOMEBODY</h1>
     <div class="rule"></div>
     <div class="rows lab">
-      <div><span>Digital</span><span>Diary</span></div>
-      <div><span>Cooking</span><span>Baking</span></div>
-      <div><span>Outfits</span><span>On repeat</span></div>
-      <div><span>Life with</span><span>2 tweens</span></div>
+      <div>Digital diary</div>
+      <div>Cooking + baking</div>
+      <div>Outfits on repeat</div>
+      <div>Life with 2 tweens</div>
     </div>
   </section>
 
