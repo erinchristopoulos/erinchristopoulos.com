@@ -138,13 +138,10 @@ async function onlyWhatsOnTheGrid(fb, id, t, all) {
     const own = await (await fetch(`${fb}/${id}?fields=media_count&access_token=${t}`)).json();
     const pub = await (await fetch(`${fb}/${id}?fields=${encodeURIComponent(`business_discovery.username(${cfg.igUsername}){media_count}`)}&access_token=${t}`)).json();
     console.log(`  post count: account says ${own.media_count ?? own.error?.message}, public profile says ${pub.business_discovery?.media_count ?? pub.error?.message}`);
-    // Diagnostic only: does each recent Reel reach followers, or non-followers only (a trial)?
-    for (const m of all.filter((x) => x.media_type === 'VIDEO').slice(0, 10)) {
-      const ins = await (await fetch(`${fb}/${m.id}/insights?metric=reach&breakdown=follow_type&access_token=${t}`)).json();
-      if (ins.error) { console.log(`    reel ${m.timestamp.slice(0, 10)}: ${ins.error.message}`); continue; }
-      const rows = ins.data?.[0]?.total_value?.breakdowns?.[0]?.results || [];
-      const followers = rows.find((r) => /^FOLLOWER$/i.test(r.dimension_values?.[0]))?.value || 0;
-      console.log(`    reel ${m.timestamp.slice(0, 10)}: ${rows.length ? (followers > 0 ? 'reached followers' : 'non-followers only') : 'no breakdown returned'}`);
+    // Diagnostic only: compare recent Reels on public signals (caption length, likes, comments).
+    const det = await (await fetch(`${fb}/${id}/media?fields=id,media_type,timestamp,caption,like_count,comments_count,is_comment_enabled&limit=40&access_token=${t}`)).json();
+    for (const m of (det.data || []).filter((x) => x.media_type === 'VIDEO').slice(0, 16)) {
+      console.log(`    reel ${m.timestamp.slice(0, 16)} caption=${(m.caption || '').length} chars likes=${m.like_count} comments=${m.comments_count} comments_on=${m.is_comment_enabled}`);
     }
   } catch (e) { console.log(`  diagnostics stopped: ${e.message}`); }
   try {
