@@ -16,6 +16,14 @@ The site rebuilds every morning and whenever this repository changes.
 - `data/config.json` holds the links, the email address and how many essays, Reels and posts to show.
 - `static/img/portrait.jpg` is the top photo.
 
+## The partnerships page
+
+`static/partnerships/` is the brand-facing media kit at www.erinchristopoulos.com/partnerships. The build copies it to the site as it is, so it doesn't change on its own.
+
+- The numbers come from the CSV files in `static/partnerships/data`. To update them, replace a file with new numbers and keep the same column names.
+- The photos, logos and short silent Reel loops are in `static/partnerships/media`.
+- The words are in `static/partnerships/index.html`, the styles in `ec.css` and the charts in `app.js`. `dash-static.js` loads the CSV files and draws the charts.
+
 ## Hosting
 
 GitHub Pages serves the `dist` folder that `build.mjs` makes, at www.erinchristopoulos.com (the plain erinchristopoulos.com redirects there). Email for the domain runs on Google Workspace, so its MX records stay as they are when the website records change.
