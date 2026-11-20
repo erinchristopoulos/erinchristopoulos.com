@@ -110,7 +110,7 @@ async function saveVideo(url, name) {
 // Instagram is read through graph.facebook.com with a token that never expires
 // (a Unified-login token, or a system-user token from the business portfolio).
 async function fetchMedia(token) {
-  const fields = 'id,media_type,permalink,thumbnail_url,media_url,timestamp,children{media_type,media_url,thumbnail_url}';
+  const fields = 'id,media_type,permalink,thumbnail_url,media_url,timestamp,like_count,comments_count,children{media_type,media_url,thumbnail_url}';
   const t = encodeURIComponent(token);
   const fb = process.env.IG_API_BASE || 'https://graph.facebook.com/v26.0';
   // Unified-login tokens can list the account; Page and system-user tokens use the saved ID.
@@ -122,7 +122,22 @@ async function fetchMedia(token) {
   } catch { /* keep the saved ID */ }
   const r = await fetchWithRetry(`${fb}/${id}/media?fields=${encodeURIComponent(fields)}&limit=40&access_token=${t}`);
   const all = (await r.json()).data || [];
-  return onlyWhatsOnTheGrid(fb, id, t, all);
+  return dropTestVersions(await onlyWhatsOnTheGrid(fb, id, t, all));
+}
+
+// When several Reels go up on the same day, they're usually versions of one idea being tested.
+// The one shared with followers collects the most likes and comments, so that one is kept.
+function dropTestVersions(media) {
+  const day = (m) => new Date(m.timestamp).toLocaleDateString('en-CA', { timeZone: 'America/Denver' });
+  const score = (m) => (m.like_count || 0) + 3 * (m.comments_count || 0);
+  const best = new Map();
+  for (const m of media.filter((x) => x.media_type === 'VIDEO')) {
+    const d = day(m);
+    if (!best.has(d) || score(m) > score(best.get(d))) best.set(d, m);
+  }
+  const kept = media.filter((m) => m.media_type !== 'VIDEO' || best.get(day(m)) === m);
+  if (kept.length < media.length) console.log(`  left off ${media.length - kept.length} same-day test versions of Reels`);
+  return kept;
 }
 
 // /media also returns trial Reels, which never appear on the profile. Business Discovery returns
