@@ -62,6 +62,7 @@
   .ig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}
   .ig img{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--slate)}
 
+  .sub{margin-top:14px!important}
   .btn{display:block;text-align:center;padding:16px 12px;margin:0 7cqw;background:var(--ink);color:var(--white);font-stretch:125%;font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:12px}
   footer{padding:40px 7cqw 30px}
   footer .rule{margin-bottom:9px}
@@ -91,14 +92,7 @@
 {{ESSAYS}}
     <a class="more lab" href="{{ARCHIVE}}"><span>All essays{{AR}}</span></a>
   </div>
-  <form action="{{SUBSCRIBE}}" method="post" target="_blank">
-    <label class="vh" for="email">Your email</label>
-    <input id="email" type="email" name="email" placeholder="Your email for new essays" required>
-    <input type="hidden" name="source" value="embed">
-    <input type="hidden" name="first_url" value="https://{{DOMAIN}}/">
-    <input type="hidden" name="current_url" value="https://{{DOMAIN}}/">
-    <button type="submit">Subscribe</button>
-  </form>
+  <a class="btn sub" href="{{SUBSCRIBE}}">Get new essays by email</a>
 
   <div class="sh lab"><span>Reels</span><a href="{{INSTAGRAM}}reels/">Watch all{{AR}}</a></div>
   <div class="rail">
