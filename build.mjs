@@ -107,46 +107,6 @@ async function saveVideo(url, name) {
   }
 }
 
-// The account's own /media list includes trial Reels, which only non-followers see and which
-// never appear on the profile. Business Discovery returns what the public profile shows,
-// so anything missing from it is left off the site. If that lookup fails, nothing is filtered.
-async function onlyPublicProfile(fb, acct, t, all) {
-  try {
-    const diag = await fetchWithRetry(`${fb}/${acct.id}/media?fields=id,timestamp,media_type,media_product_type,is_shared_to_feed&limit=40&access_token=${t}`, {}, 1);
-    const rows = (await diag.json()).data || [];
-    for (const m of rows.filter((x) => x.media_type === 'VIDEO').slice(0, 12)) {
-      console.log(`    reel ${m.timestamp?.slice(0, 10)} type=${m.media_product_type} shared_to_feed=${m.is_shared_to_feed}`);
-    }
-  } catch (e) {
-    console.log(`  (reel details unavailable: ${e.message})`);
-  }
-  // Probe: does Meta expose a trial setting on a Reel? Logs only the field's value or Meta's error text.
-  const newestReel = all.find((m) => m.media_type === 'VIDEO');
-  for (const f of ['trial_params', 'is_trial_reel']) {
-    if (!newestReel) break;
-    try {
-      const pr = await fetch(`${fb}/${newestReel.id}?fields=${encodeURIComponent(f)}&access_token=${t}`);
-      const pb = await pr.json();
-      const shown = pr.ok ? JSON.stringify(Object.fromEntries(Object.entries(pb).filter(([k]) => k !== 'id'))) : pb?.error?.message;
-      console.log(`    probe ${f}: ${shown}`);
-    } catch (e) { console.log(`    probe ${f}: ${e.message}`); }
-  }
-  try {
-    const q = `business_discovery.username(${acct.username || 'erin_christopoulos'}){media.limit(60){id}}`;
-    const r = await fetch(`${fb}/${acct.id}?fields=${encodeURIComponent(q)}&access_token=${t}`);
-    const body = await r.json();
-    if (!r.ok) throw new Error(`${r.status}: ${body?.error?.message || 'no message'}`);
-    const ids = new Set((body.business_discovery?.media?.data || []).map((m) => m.id));
-    if (!ids.size) throw new Error('no public media returned');
-    const shown = all.filter((m) => ids.has(m.id));
-    console.log(`  ${shown.length} of ${all.length} posts are on the public profile; left off ${all.length - shown.length} (trial Reels or hidden posts)`);
-    return shown;
-  } catch (e) {
-    console.log(`  public profile check failed (${e.message}); showing everything`);
-    return all;
-  }
-}
-
 // Newer Meta apps get a system-user token through "Unified login": it never expires,
 // lives on graph.facebook.com, and needs the Instagram account ID first.
 // Older tokens from "Instagram login" use graph.instagram.com/me/media instead.
@@ -160,8 +120,7 @@ async function fetchMedia(token) {
     const acct = accounts.find((x) => x.username === 'erin_christopoulos') || accounts[0];
     if (acct) {
       const r = await fetchWithRetry(`${fb}/${acct.id}/media?fields=${encodeURIComponent(fields)}&limit=40&access_token=${t}`);
-      const all = (await r.json()).data || [];
-      return await onlyPublicProfile(fb, acct, t, all);
+      return (await r.json()).data || [];
     }
   } catch (e) {
     console.log(`  unified login lookup failed (${e.message}); trying Instagram login`);
