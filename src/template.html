@@ -65,6 +65,11 @@
   .ig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 7cqw}
   .ig img{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--slate)}
 
+  .forbrands{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:12px;border-top:1px solid var(--ink);font-size:10.5px}
+  .brandcard{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0 7cqw 24px;padding:18px 16px;border:3px solid var(--ink)}
+  .brandcard .t{display:block;font-stretch:125%;font-weight:800;font-size:15px;line-height:1.1;text-transform:uppercase}
+  .brandcard .d{display:block;margin-top:7px;font-size:14px;line-height:1.35}
+  .brandcard .ar{flex:none;width:24px;height:18px;margin:0}
   .btn{display:block;text-align:center;padding:16px 10px;margin:0 7cqw;background:var(--ink);color:var(--white);font-stretch:112%;font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:min(12px,2.85cqw);white-space:nowrap;overflow:hidden}
   footer{padding:clamp(64px,20cqw,88px) 7cqw 36px}
   footer .rule{margin-bottom:9px}
@@ -87,6 +92,7 @@
       <div>Outfits on repeat</div>
       <div>Life with 2 tweens</div>
     </div>
+    <a class="forbrands lab" href="/partnerships/">For brands<span>Partnerships{{AR}}</span></a>
   </section>
 
   <div class="sh lab"><span>A Little Less on Substack</span><a href="{{ARCHIVE}}">All{{AR}}</a></div>
@@ -110,7 +116,14 @@
 {{COLLECTIONS}}
   </div>
 
-  <div class="sh lab"><span>Work with me</span><span>Brands + partnerships</span></div>
+  <div class="sh lab" id="brands"><span>Work with me</span><a href="/partnerships/">Partnerships{{AR}}</a></div>
+  <a class="brandcard" href="/partnerships/">
+    <span>
+      <span class="t">For brands</span>
+      <span class="d">See who I reach, the brands I&rsquo;ve worked with and the ways we can work together.</span>
+    </span>
+    {{AR}}
+  </a>
 {{WORK}}
   <a class="btn" href="mailto:{{EMAIL}}">{{EMAIL}}</a>
 
