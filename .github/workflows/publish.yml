@@ -25,7 +25,10 @@ jobs:
         with:
           node-version: 22
       - name: Install ffmpeg (cuts the Reel previews)
-        timeout-minutes: 6
+        # Ubuntu's package mirror is sometimes very slow. If this times out, the site still
+        # builds and Reels show their covers until the next run.
+        timeout-minutes: 4
+        continue-on-error: true
         run: sudo apt-get -o DPkg::Lock::Timeout=120 install -y -qq --no-install-recommends ffmpeg || (sudo apt-get -o DPkg::Lock::Timeout=120 update -qq && sudo apt-get -o DPkg::Lock::Timeout=120 install -y -qq --no-install-recommends ffmpeg)
       - name: Build
         env:
