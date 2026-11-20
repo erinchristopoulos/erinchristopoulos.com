@@ -135,7 +135,18 @@ async function onlyWhatsOnTheGrid(fb, id, t, all) {
     const perms = await (await fetch(`${fb}/me/permissions?access_token=${t}`)).json();
     const granted = (perms.data || []).filter((p) => p.status === 'granted').map((p) => p.permission).join(', ');
     console.log(`  token belongs to: ${me.name || me.error?.message}; permissions: ${granted || perms.error?.message || 'none listed'}`);
-  } catch { /* diagnostics only */ }
+    const own = await (await fetch(`${fb}/${id}?fields=media_count&access_token=${t}`)).json();
+    const pub = await (await fetch(`${fb}/${id}?fields=${encodeURIComponent(`business_discovery.username(${cfg.igUsername}){media_count}`)}&access_token=${t}`)).json();
+    console.log(`  post count: account says ${own.media_count ?? own.error?.message}, public profile says ${pub.business_discovery?.media_count ?? pub.error?.message}`);
+    // Diagnostic only: does each recent Reel reach followers, or non-followers only (a trial)?
+    for (const m of all.filter((x) => x.media_type === 'VIDEO').slice(0, 10)) {
+      const ins = await (await fetch(`${fb}/${m.id}/insights?metric=reach&breakdown=follow_type&access_token=${t}`)).json();
+      if (ins.error) { console.log(`    reel ${m.timestamp.slice(0, 10)}: ${ins.error.message}`); continue; }
+      const rows = ins.data?.[0]?.total_value?.breakdowns?.[0]?.results || [];
+      const followers = rows.find((r) => /^FOLLOWER$/i.test(r.dimension_values?.[0]))?.value || 0;
+      console.log(`    reel ${m.timestamp.slice(0, 10)}: ${rows.length ? (followers > 0 ? 'reached followers' : 'non-followers only') : 'no breakdown returned'}`);
+    }
+  } catch (e) { console.log(`  diagnostics stopped: ${e.message}`); }
   try {
     const q = `business_discovery.username(${cfg.igUsername}){media.limit(60){id}}`;
     const r = await fetch(`${fb}/${id}?fields=${encodeURIComponent(q)}&access_token=${t}`);
