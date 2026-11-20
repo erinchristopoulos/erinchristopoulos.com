@@ -122,43 +122,10 @@ async function fetchMedia(token) {
   } catch { /* keep the saved ID */ }
   const r = await fetchWithRetry(`${fb}/${id}/media?fields=${encodeURIComponent(fields)}&limit=40&access_token=${t}`);
   const all = (await r.json()).data || [];
-  return onlyWhatsOnTheGrid(fb, id, t, all);
+  return all;
 }
 
 
-// /media also returns trial Reels, which never appear on the profile. Business Discovery returns
-// what the public profile shows, so anything missing from it stays off the site. It needs a token
-// with pages_read_engagement and instagram_manage_insights; without one, nothing is filtered.
-async function onlyWhatsOnTheGrid(fb, id, t, all) {
-  try {
-    const me = await (await fetch(`${fb}/me?fields=name&access_token=${t}`)).json();
-    const perms = await (await fetch(`${fb}/me/permissions?access_token=${t}`)).json();
-    const granted = (perms.data || []).filter((p) => p.status === 'granted').map((p) => p.permission).join(', ');
-    console.log(`  token belongs to: ${me.name || me.error?.message}; permissions: ${granted || perms.error?.message || 'none listed'}`);
-    const own = await (await fetch(`${fb}/${id}?fields=media_count&access_token=${t}`)).json();
-    const pub = await (await fetch(`${fb}/${id}?fields=${encodeURIComponent(`business_discovery.username(${cfg.igUsername}){media_count}`)}&access_token=${t}`)).json();
-    console.log(`  post count: account says ${own.media_count ?? own.error?.message}, public profile says ${pub.business_discovery?.media_count ?? pub.error?.message}`);
-    // Diagnostic only: compare recent Reels on public signals (caption length, likes, comments).
-    const det = await (await fetch(`${fb}/${id}/media?fields=id,media_type,timestamp,caption,like_count,comments_count,is_comment_enabled&limit=40&access_token=${t}`)).json();
-    for (const m of (det.data || []).filter((x) => x.media_type === 'VIDEO').slice(0, 16)) {
-      console.log(`    reel ${m.timestamp.slice(0, 16)} caption=${(m.caption || '').length} chars likes=${m.like_count} comments=${m.comments_count} comments_on=${m.is_comment_enabled}`);
-    }
-  } catch (e) { console.log(`  diagnostics stopped: ${e.message}`); }
-  try {
-    const q = `business_discovery.username(${cfg.igUsername}){media.limit(60){id}}`;
-    const r = await fetch(`${fb}/${id}?fields=${encodeURIComponent(q)}&access_token=${t}`);
-    const body = await r.json();
-    if (!r.ok) throw new Error(body?.error?.message || `HTTP ${r.status}`);
-    const onGrid = new Set((body.business_discovery?.media?.data || []).map((m) => m.id));
-    if (!onGrid.size) throw new Error('the profile returned no posts');
-    const shown = all.filter((m) => onGrid.has(m.id));
-    console.log(`  ${shown.length} of ${all.length} posts are on the grid; left off ${all.length - shown.length} trial Reels or hidden posts`);
-    return shown;
-  } catch (e) {
-    console.log(`  grid check unavailable (${e.message}); showing every post, trial Reels included`);
-    return all;
-  }
-}
 
 async function getInstagram() {
   const token = process.env.IG_ACCESS_TOKEN;
