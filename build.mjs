@@ -120,11 +120,11 @@ async function fetchMedia(token) {
     const { data: accounts = [] } = await a.json();
     id = (accounts.find((x) => x.username === cfg.igUsername) || accounts[0] || {}).id || id;
   } catch { /* keep the saved ID */ }
-  // Read newest first, and keep paging (up to 400 posts) until every featured post is found.
+  // Read newest first, and keep paging (up to 2,000 posts) until every featured post is found.
   const want = cfg.featured || [];
   const all = [];
   let url = `${fb}/${id}/media?fields=${encodeURIComponent(fields)}&limit=50&access_token=${t}`;
-  for (let page = 0; url && page < 8; page++) {
+  for (let page = 0; url && page < 40; page++) {
     const body = await (await fetchWithRetry(url)).json();
     all.push(...(body.data || []));
     const missing = want.filter((sc) => !all.some((m) => shortcode(m.permalink) === sc));
