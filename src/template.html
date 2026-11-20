@@ -47,6 +47,8 @@
   .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   input[type=email]{flex:1;min-width:0;border:0;border-radius:0;background:#fff;color:var(--ink);font:500 15px "Archivo",Arial,sans-serif;padding:14px 13px;-webkit-appearance:none}
   input[type=email]::placeholder{color:#6b6862}
+  .thanks{margin:14px 7cqw 0;padding:14px 13px;background:#fff;font-weight:500;font-size:15px;line-height:1.35}
+  form[hidden],.thanks[hidden],iframe[hidden]{display:none}
   button{border:0;border-radius:0;background:var(--ink);color:var(--white);cursor:pointer;font-family:"Archivo",Arial,sans-serif;font-stretch:125%;font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:12px;padding:0 18px;min-height:44px;-webkit-appearance:none}
 
   .reel{width:min(40cqw,170px)}
@@ -62,7 +64,6 @@
   .ig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px}
   .ig img{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--slate)}
 
-  .sub{margin-top:14px!important}
   .btn{display:block;text-align:center;padding:16px 12px;margin:0 7cqw;background:var(--ink);color:var(--white);font-stretch:125%;font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:12px}
   footer{padding:40px 7cqw 30px}
   footer .rule{margin-bottom:9px}
@@ -92,7 +93,16 @@
 {{ESSAYS}}
     <a class="more lab" href="{{ARCHIVE}}"><span>All essays{{AR}}</span></a>
   </div>
-  <a class="btn sub" href="{{SUBSCRIBE}}">Get new essays by email</a>
+  <form id="sub" action="{{SUBSCRIBE}}" method="post" target="sub-frame">
+    <label class="vh" for="email">Your email</label>
+    <input id="email" type="email" name="email" placeholder="Your email for new essays" required>
+    <input type="hidden" name="source" value="embed">
+    <input type="hidden" name="first_url" value="https://{{DOMAIN}}/">
+    <input type="hidden" name="current_url" value="https://{{DOMAIN}}/">
+    <button type="submit">Subscribe</button>
+  </form>
+  <p class="thanks" id="sub-thanks" role="status" hidden>You're subscribed. Look for a welcome email from A Little Less.</p>
+  <iframe name="sub-frame" title="Signup" hidden></iframe>
 
   <div class="sh lab"><span>Reels</span><a href="{{INSTAGRAM}}reels/">Watch all{{AR}}</a></div>
   <div class="rail">
@@ -151,6 +161,15 @@
       });
     }, { threshold: 0.5 });
     vids.forEach(function (v) { io.observe(v); });
+  }
+  // Signup: the email goes to Substack inside a hidden frame, so the reader stays here
+  // and sees a thank-you instead of Substack's page.
+  var form = document.getElementById('sub');
+  if (form) {
+    var thanks = document.getElementById('sub-thanks'), frame = document.querySelector('iframe[name=sub-frame]'), sent = false;
+    var done = function () { if (!sent) return; form.hidden = true; thanks.hidden = false; };
+    form.addEventListener('submit', function () { sent = true; setTimeout(done, 2500); });
+    frame.addEventListener('load', done);
   }
 })();
 </script>

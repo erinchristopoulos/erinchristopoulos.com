@@ -8,7 +8,7 @@ The site rebuilds every morning and whenever this repository changes.
 
 - The newest A Little Less essays and their covers come from the Substack feed.
 - The newest Reels and posts come from Instagram once `IG_ACCESS_TOKEN` is saved as a repository secret. Until then, the saved Reels in `data/instagram-fallback.json` show.
-- The Instagram token renews itself every two weeks once `SECRETS_WRITER` is saved too (see `.github/workflows/refresh-instagram-token.yml`).
+- The token comes from the Meta app's "API setup with Unified login" (a system-user token that doesn't expire). The build looks up the Instagram account with `/me/assigned_instagram_accounts` on graph.facebook.com, then reads its media.
 
 ## What to edit by hand
 

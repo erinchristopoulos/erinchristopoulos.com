@@ -107,6 +107,29 @@ async function saveVideo(url, name) {
   }
 }
 
+// Newer Meta apps get a system-user token through "Unified login": it never expires,
+// lives on graph.facebook.com, and needs the Instagram account ID first.
+// Older tokens from "Instagram login" use graph.instagram.com/me/media instead.
+async function fetchMedia(token) {
+  const fields = 'id,media_type,permalink,thumbnail_url,media_url,timestamp';
+  const t = encodeURIComponent(token);
+  const fb = process.env.IG_API_BASE || 'https://graph.facebook.com/v26.0';
+  try {
+    const a = await fetchWithRetry(`${fb}/me/assigned_instagram_accounts?fields=id,username&access_token=${t}`, {}, 2);
+    const { data: accounts = [] } = await a.json();
+    const acct = accounts.find((x) => x.username === 'erin_christopoulos') || accounts[0];
+    if (acct) {
+      const r = await fetchWithRetry(`${fb}/${acct.id}/media?fields=${fields}&limit=40&access_token=${t}`);
+      return (await r.json()).data || [];
+    }
+  } catch (e) {
+    console.log(`  unified login lookup failed (${e.message}); trying Instagram login`);
+  }
+  const ig = process.env.IG_API_BASE || 'https://graph.instagram.com';
+  const r = await fetchWithRetry(`${ig}/me/media?fields=${fields}&limit=40&access_token=${t}`);
+  return (await r.json()).data || [];
+}
+
 async function getInstagram() {
   const token = process.env.IG_ACCESS_TOKEN;
   if (!token) {
@@ -114,10 +137,7 @@ async function getInstagram() {
     return igFallback;
   }
   try {
-    const fields = 'id,media_type,permalink,thumbnail_url,media_url,timestamp';
-    const api = process.env.IG_API_BASE || 'https://graph.instagram.com';
-    const r = await fetchWithRetry(`${api}/me/media?fields=${fields}&limit=40&access_token=${encodeURIComponent(token)}`);
-    const { data = [] } = await r.json();
+    const data = await fetchMedia(token);
     const reelsSrc = data.filter((m) => m.media_type === 'VIDEO' && m.thumbnail_url).slice(0, cfg.reels);
     const gridSrc = data.filter((m) => m.media_type !== 'VIDEO' && m.media_url).slice(0, cfg.grid);
     const fmt = (t) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
