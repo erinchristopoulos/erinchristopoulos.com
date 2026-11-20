@@ -120,48 +120,61 @@ async function fetchMedia(token) {
     const { data: accounts = [] } = await a.json();
     id = (accounts.find((x) => x.username === cfg.igUsername) || accounts[0] || {}).id || id;
   } catch { /* keep the saved ID */ }
-  const r = await fetchWithRetry(`${fb}/${id}/media?fields=${encodeURIComponent(fields)}&limit=40&access_token=${t}`);
-  const all = (await r.json()).data || [];
+  // Read newest first, and keep paging (up to 400 posts) until every featured post is found.
+  const want = cfg.featured || [];
+  const all = [];
+  let url = `${fb}/${id}/media?fields=${encodeURIComponent(fields)}&limit=50&access_token=${t}`;
+  for (let page = 0; url && page < 8; page++) {
+    const body = await (await fetchWithRetry(url)).json();
+    all.push(...(body.data || []));
+    const missing = want.filter((sc) => !all.some((m) => shortcode(m.permalink) === sc));
+    if (!missing.length && all.length >= 40) break;
+    url = body.paging?.next;
+  }
   return all;
 }
+
+const shortcode = (link = '') => (link.match(/\/(?:p|reel|reels|tv)\/([^/?#]+)/) || [])[1];
 
 
 
 async function getInstagram() {
   const token = process.env.IG_ACCESS_TOKEN;
   if (!token) {
-    console.log('  no IG_ACCESS_TOKEN: using the saved Reels and posts');
-    return igFallback;
+    console.log('  no IG_ACCESS_TOKEN: using the saved posts');
+    return { ...igFallback, work: [] };
   }
   try {
     const data = await fetchMedia(token);
-    const reelsSrc = data.filter((m) => m.media_type === 'VIDEO' && m.thumbnail_url).slice(0, cfg.reels);
-    // The grid mirrors the Instagram grid: newest posts of every kind, each shown by its cover image.
     const cover = (m) => (m.media_type === 'VIDEO' ? m.thumbnail_url
       : m.media_url || m.children?.data?.map((c) => (c.media_type === 'VIDEO' ? c.thumbnail_url : c.media_url)).find(Boolean));
-    const gridSrc = data.filter((m) => cover(m)).slice(0, cfg.grid);
-    const withVideo = reelsSrc.filter((m) => m.media_url).length;
-    console.log(`  ${data.length} posts from Instagram; ${withVideo} of ${reelsSrc.length} Reels have a video file (the rest use licensed audio)`);
-    const fmt = (t) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const reels = [];
-    for (const [i, m] of reelsSrc.entries()) {
-      reels.push({
-        image: await saveImage(m.thumbnail_url, `reel-${i + 1}`),
-        // media_url is missing for Reels with licensed audio; those keep the cover only.
-        video: m.media_url ? await saveVideo(m.media_url, `reel-${i + 1}`) : null,
-        url: m.permalink,
-        alt: `Reel from ${fmt(m.timestamp)}`,
-      });
-    }
+    const fmt = (t) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    // Grid: newest photos and carousels only. Reels stay off the grid because Meta's data
+    // can't tell trial Reels from Reels on the profile.
     const grid = [];
-    for (const [i, m] of gridSrc.entries()) {
+    for (const [i, m] of data.filter((x) => x.media_type !== 'VIDEO' && cover(x)).slice(0, cfg.grid).entries()) {
       grid.push({ image: await saveImage(cover(m), `post-${i + 1}`), url: m.permalink, alt: `Instagram post from ${fmt(m.timestamp)}` });
     }
-    if (!reels.length && !grid.length) throw new Error('Instagram returned no media');
-    return { reels: reels.length ? reels : igFallback.reels, grid: grid.length ? grid : igFallback.grid };
+
+    // Work with me: the posts Erin picked for brands (config.featured), in her order.
+    const work = [];
+    for (const [i, sc] of (cfg.featured || []).entries()) {
+      const m = data.find((x) => shortcode(x.permalink) === sc);
+      if (!m) { console.warn(`  featured post ${sc} not found`); continue; }
+      const isReel = m.media_type === 'VIDEO';
+      work.push({
+        image: await saveImage(cover(m), `work-${i + 1}`),
+        video: isReel && m.media_url ? await saveVideo(m.media_url, `work-${i + 1}`) : null,
+        url: m.permalink,
+        alt: `${isReel ? 'Reel' : 'Post'} from ${fmt(m.timestamp)}`,
+      });
+    }
+    console.log(`  read ${data.length} posts; ${grid.length} photos in the grid; ${work.length} of ${(cfg.featured || []).length} featured posts found, ${work.filter((w) => w.video).length} with video`);
+    return { grid: grid.length ? grid : igFallback.grid, work };
   } catch (e) {
-    console.warn(`  Instagram failed (${e.message}): using the saved Reels and posts`);
-    return igFallback;
+    console.warn(`  Instagram failed (${e.message}): using the saved posts`);
+    return { ...igFallback, work: [] };
   }
 }
 
@@ -197,9 +210,10 @@ console.log('shop…');
 const shop = await getCollections();
 
 const essaysHtml = essays.map((e) => `    <a class="essay" href="${esc(e.link)}"><img src="${esc(e.image || '')}" alt="${esc(e.title)}" loading="lazy" width="960" height="691"></a>`).join('\n');
-const reelsHtml = ig.reels.map((r) => r.video
-  ? `    <a class="reel" href="${esc(r.url)}"><video muted playsinline loop preload="none" poster="${esc(r.image)}" src="${esc(r.video)}" aria-label="${esc(r.alt || 'Reel')}"></video></a>`
-  : `    <a class="reel" href="${esc(r.url)}"><img src="${esc(r.image)}" alt="${esc(r.alt || 'Reel')}" loading="lazy"></a>`).join('\n');
+const tile = (r) => (r.video
+  ? `    <a class="reel" href="${esc(r.url)}"><video muted playsinline loop preload="none" poster="${esc(r.image)}" src="${esc(r.video)}" aria-label="${esc(r.alt)}"></video></a>`
+  : `    <a class="reel" href="${esc(r.url)}"><img src="${esc(r.image)}" alt="${esc(r.alt)}" loading="lazy"></a>`);
+const workHtml = ig.work.length ? `  <div class="rail work">\n${ig.work.map(tile).join('\n')}\n  </div>` : '';
 const gridHtml = ig.grid.map((g) => `    <a href="${esc(g.url)}"><img src="${esc(g.image)}" alt="${esc(g.alt || 'Instagram post')}" loading="lazy"></a>`).join('\n');
 const shopHtml = shop.map((c) => `    <a class="coll" href="${esc(c.url)}">
       <div class="grid">${c.images.map((src) => `<img src="${esc(src)}" alt="" loading="lazy">`).join('')}</div>
@@ -211,7 +225,7 @@ const shopHtml = shop.map((c) => `    <a class="coll" href="${esc(c.url)}">
 const tpl = await readFile(path.join(root, 'src/template.html'), 'utf8');
 const html = tpl
   .replaceAll('{{ESSAYS}}', essaysHtml)
-  .replaceAll('{{REELS}}', reelsHtml)
+  .replaceAll('{{WORK}}', workHtml)
   .replaceAll('{{COLLECTIONS}}', shopHtml)
   .replaceAll('{{GRID}}', gridHtml)
   .replaceAll('{{AR}}', AR)
@@ -227,4 +241,4 @@ const html = tpl
 await writeFile(path.join(dist, 'index.html'), html);
 await writeFile(path.join(dist, 'CNAME'), cfg.domain + '\n');
 await writeFile(path.join(dist, '.nojekyll'), '');
-console.log(`done: ${essays.length} essays, ${ig.reels.length} reels, ${ig.grid.length} posts, ${shop.length} collections`);
+console.log(`done: ${essays.length} essays, ${ig.work.length} featured, ${ig.grid.length} posts, ${shop.length} collections`);

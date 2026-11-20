@@ -36,6 +36,7 @@
   .sh{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;margin:38px 0 12px;padding:0 7cqw}
   .rail{display:flex;gap:10px;overflow-x:auto;padding:0 7cqw;scroll-snap-type:x mandatory;scroll-padding-left:7cqw;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .rail::-webkit-scrollbar{display:none}
+  .work{margin-bottom:14px}
   .rail>*{flex:none;scroll-snap-align:start}
   .rail::after{content:"";flex:0 0 calc(7cqw - 10px)}
 
@@ -88,7 +89,7 @@
     </div>
   </section>
 
-  <div class="sh lab"><span>A Little Less &middot; essays</span><a href="{{ARCHIVE}}">All{{AR}}</a></div>
+  <div class="sh lab"><span>A Little Less on Substack</span><a href="{{ARCHIVE}}">All{{AR}}</a></div>
   <div class="rail" data-autoscroll>
 {{ESSAYS}}
     <a class="more lab" href="{{ARCHIVE}}"><span>All essays{{AR}}</span></a>
@@ -104,23 +105,19 @@
   <p class="thanks" id="sub-thanks" role="status" hidden>You're subscribed. Look for a welcome email from A Little Less.</p>
   <iframe name="sub-frame" title="Signup" hidden></iframe>
 
-  <div class="sh lab"><span>Reels</span><a href="{{INSTAGRAM}}reels/">Watch all{{AR}}</a></div>
-  <div class="rail">
-{{REELS}}
-  </div>
-
   <div class="sh lab"><span>Shop my favorites</span><a href="{{SHOP}}">Shop all{{AR}}</a></div>
   <div class="rail">
 {{COLLECTIONS}}
   </div>
 
+  <div class="sh lab"><span>Work with me</span><span>Brands + partnerships</span></div>
+{{WORK}}
+  <a class="btn" href="mailto:{{EMAIL}}">{{EMAIL}}</a>
+
   <div class="sh lab"><span>@erin_christopoulos</span><a href="{{INSTAGRAM}}">Follow{{AR}}</a></div>
   <div class="ig">
 {{GRID}}
   </div>
-
-  <div class="sh lab"><span>Work with me</span><span>Brands + partnerships</span></div>
-  <a class="btn" href="mailto:{{EMAIL}}">{{EMAIL}}</a>
 
   <footer>
     <div class="rule"></div>
@@ -151,7 +148,7 @@
       else if (!en[0].isIntersecting && timer) { clearInterval(timer); timer = null; }
     }, { threshold: 0.6 }).observe(rail);
   }
-  // Reels: play the previews that are on screen, muted, and pause the rest.
+  // Featured Reels: play the previews that are on screen, muted, and pause the rest.
   var vids = document.querySelectorAll('.reel video');
   if (vids.length && !still && 'IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (ens) {
