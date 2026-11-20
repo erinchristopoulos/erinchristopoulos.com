@@ -111,7 +111,7 @@ async function saveVideo(url, name) {
 // lives on graph.facebook.com, and needs the Instagram account ID first.
 // Older tokens from "Instagram login" use graph.instagram.com/me/media instead.
 async function fetchMedia(token) {
-  const fields = 'id,media_type,permalink,thumbnail_url,media_url,timestamp';
+  const fields = 'id,media_type,permalink,thumbnail_url,media_url,timestamp,children{media_type,media_url,thumbnail_url}';
   const t = encodeURIComponent(token);
   const fb = process.env.IG_API_BASE || 'https://graph.facebook.com/v26.0';
   try {
@@ -119,14 +119,14 @@ async function fetchMedia(token) {
     const { data: accounts = [] } = await a.json();
     const acct = accounts.find((x) => x.username === 'erin_christopoulos') || accounts[0];
     if (acct) {
-      const r = await fetchWithRetry(`${fb}/${acct.id}/media?fields=${fields}&limit=40&access_token=${t}`);
+      const r = await fetchWithRetry(`${fb}/${acct.id}/media?fields=${encodeURIComponent(fields)}&limit=40&access_token=${t}`);
       return (await r.json()).data || [];
     }
   } catch (e) {
     console.log(`  unified login lookup failed (${e.message}); trying Instagram login`);
   }
   const ig = process.env.IG_API_BASE || 'https://graph.instagram.com';
-  const r = await fetchWithRetry(`${ig}/me/media?fields=${fields}&limit=40&access_token=${t}`);
+  const r = await fetchWithRetry(`${ig}/me/media?fields=${encodeURIComponent(fields)}&limit=40&access_token=${t}`);
   return (await r.json()).data || [];
 }
 
@@ -139,7 +139,12 @@ async function getInstagram() {
   try {
     const data = await fetchMedia(token);
     const reelsSrc = data.filter((m) => m.media_type === 'VIDEO' && m.thumbnail_url).slice(0, cfg.reels);
-    const gridSrc = data.filter((m) => m.media_type !== 'VIDEO' && m.media_url).slice(0, cfg.grid);
+    // The grid mirrors the Instagram grid: newest posts of every kind, each shown by its cover image.
+    const cover = (m) => (m.media_type === 'VIDEO' ? m.thumbnail_url
+      : m.media_url || m.children?.data?.map((c) => (c.media_type === 'VIDEO' ? c.thumbnail_url : c.media_url)).find(Boolean));
+    const gridSrc = data.filter((m) => cover(m)).slice(0, cfg.grid);
+    const withVideo = reelsSrc.filter((m) => m.media_url).length;
+    console.log(`  ${data.length} posts from Instagram; ${withVideo} of ${reelsSrc.length} Reels have a video file (the rest use licensed audio)`);
     const fmt = (t) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const reels = [];
     for (const [i, m] of reelsSrc.entries()) {
@@ -153,7 +158,7 @@ async function getInstagram() {
     }
     const grid = [];
     for (const [i, m] of gridSrc.entries()) {
-      grid.push({ image: await saveImage(m.media_url, `post-${i + 1}`), url: m.permalink, alt: `Instagram post from ${fmt(m.timestamp)}` });
+      grid.push({ image: await saveImage(cover(m), `post-${i + 1}`), url: m.permalink, alt: `Instagram post from ${fmt(m.timestamp)}` });
     }
     if (!reels.length && !grid.length) throw new Error('Instagram returned no media');
     return { reels: reels.length ? reels : igFallback.reels, grid: grid.length ? grid : igFallback.grid };
